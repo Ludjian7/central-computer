@@ -4,13 +4,6 @@ const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
 
-// Database
-const { testConnection } = require('./server/config/database');
-const { syncModels } = require('./server/models');
-
-// Routes
-const routes = require('./server/routes');
-
 // Initialize Express
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -58,11 +51,26 @@ app.use(session({
   }
 }));
 
-// Test database connection
-testConnection();
+// Conditionally import and initialize database 
+// (only if not in build/initial deployment phase)
+if (!process.env.VERCEL_BUILD_STEP) {
+  try {
+    // Database
+    const { testConnection } = require('./server/config/database');
+    const { syncModels } = require('./server/models');
+    
+    // Test database connection
+    testConnection();
+    
+    // Sync models with database
+    syncModels();
+  } catch (error) {
+    console.error('Database initialization error:', error);
+  }
+}
 
-// Sync models with database
-syncModels();
+// Routes
+const routes = require('./server/routes');
 
 // API Routes - ensure they're mounted at /api
 app.use('/api', routes);

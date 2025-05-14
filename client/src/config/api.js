@@ -13,6 +13,7 @@ const api = axios.create({
     'Accept': 'application/json'
   },
   withCredentials: true, // Untuk mengirim cookie
+  timeout: 10000, // 10 second timeout
 });
 
 // Request interceptor
@@ -30,11 +31,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Network error handling
+    if (!error.response) {
+      console.error('Network error - please check your connection');
+      return Promise.reject(new Error('Network error - please check your connection'));
+    }
+    
+    // Server error handling
     if (error.response) {
       // Handle specific error cases
       switch (error.response.status) {
         case 401:
           // Unauthorized - redirect to login
+          console.error('Authentication required - redirecting to login');
           window.location.href = '/login';
           break;
         case 403:
@@ -49,16 +58,13 @@ api.interceptors.response.use(
           // Method not allowed - show error message
           console.error('Method not allowed');
           break;
+        case 500:
+          console.error('Server error - please try again later');
+          break;
         default:
           // Handle other errors
           console.error('An error occurred:', error.response.data);
       }
-    } else if (error.request) {
-      // Request was made but no response received
-      console.error('No response received:', error.request);
-    } else {
-      // Something happened in setting up the request
-      console.error('Error setting up request:', error.message);
     }
     return Promise.reject(error);
   }
