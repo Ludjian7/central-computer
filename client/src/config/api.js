@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Konfigurasi base URL berdasarkan environment
 const baseURL = process.env.NODE_ENV === 'production'
-  ? '/api'  // Use relative path in production
+  ? 'https://central-computers.up.railway.app/api'  // Ganti dengan URL Railway Anda
   : 'http://localhost:5001/api';
 
 // Membuat instance axios dengan konfigurasi
