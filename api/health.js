@@ -1,4 +1,4 @@
-// Simple health check endpoint
+// Health check endpoint for Railway deployment
 module.exports = (req, res) => {
   res.status(200).json({
     status: 'ok',

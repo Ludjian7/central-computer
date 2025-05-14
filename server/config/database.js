@@ -26,13 +26,31 @@ if (process.env.DATABASE_URL) {
   });
 } else {
   // Fallback to individual connection parameters
+  const dbName = process.env.DB_NAME || (isProduction ? 'postgres' : 'toko_komputer_db');
+  const dbUser = process.env.DB_USER || 'postgres';
+  const dbPassword = (process.env.DB_PASSWORD || (isProduction ? '' : 'postgres')).toString();
+  // For Supabase, use the proper hostname format without 'db.' prefix
+  let dbHost = process.env.DB_HOST || (isProduction ? 'zzqkrmcdnwuyfgxvjnmn.supabase.co' : 'localhost');
+  if (isProduction && dbHost && dbHost.startsWith('db.')) {
+    dbHost = dbHost.replace('db.', '');
+  }
+  const dbPort = process.env.DB_PORT || 5432;
+  
+  // Log connection parameters for debugging
+  console.log('Database connection parameters:');
+  console.log(`- Name: ${dbName}`);
+  console.log(`- Host: ${dbHost}`);
+  console.log(`- Port: ${dbPort}`);
+  console.log(`- User: ${dbUser}`);
+  console.log(`- Production mode: ${isProduction}`);
+  
   sequelize = new Sequelize(
-    process.env.DB_NAME || (isProduction ? 'postgres' : 'toko_komputer_db'),
-    process.env.DB_USER || 'postgres',
-    (process.env.DB_PASSWORD || (isProduction ? '' : 'postgres')).toString(),
+    dbName,
+    dbUser,
+    dbPassword,
     {
-      host: process.env.DB_HOST || (isProduction ? 'your-project.supabase.co' : 'localhost'),
-      port: process.env.DB_PORT || 5432,
+      host: dbHost,
+      port: dbPort,
       dialect: 'postgres',
       logging: false,
       pool: {
@@ -42,7 +60,7 @@ if (process.env.DATABASE_URL) {
         idle: 10000
       },
       dialectOptions: {
-        // SSL untuk Supabase (hanya di production)
+        // SSL for Supabase (only in production)
         ssl: isProduction ? {
           require: true,
           rejectUnauthorized: false

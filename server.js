@@ -8,20 +8,22 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// CORS Configuration for Vercel deployment
+// CORS Configuration for both Vercel and Railway deployment
 const whitelist = [
   'https://central-computer.vercel.app',
   'https://central-computers.vercel.app',
   'https://central-computer-4fhshk1di-ludjian7s-projects.vercel.app',
-  'http://localhost:3000'
-];
+  'http://localhost:3000',
+  // Add Railway URL when you get it
+  process.env.RAILWAY_STATIC_URL
+].filter(Boolean); // Filter out undefined values
 
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
     // allow requests with no origin (like mobile apps, curl, postman)
     if (!origin) return callback(null, true);
-    if (whitelist.indexOf(origin) !== -1) {
+    if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
       console.log("Origin not allowed by CORS:", origin);
@@ -110,6 +112,15 @@ app.use(async (req, res, next) => {
 // API Routes - ensure they're mounted at /api
 app.use('/api', routes);
 
+// Railway health check
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'central-computers-api',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
   // Specify the correct path to client build directory
@@ -155,8 +166,10 @@ if (process.env.VERCEL) {
   // Connect to database in development
   dbConnectionManager.connect();
   
-  // Start server for local development
+  // Start server for local development or Railway
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Database: ${process.env.DATABASE_URL ? 'Connected via URL' : 'Using individual params'}`);
   });
 } 
