@@ -8,13 +8,16 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// CORS Configuration for both Vercel and Railway deployment
+// CORS Configuration for Render, Vercel and Railway deployment
 const whitelist = [
   'https://central-computer.vercel.app',
   'https://central-computers.vercel.app',
   'https://central-computer-4fhshk1di-ludjian7s-projects.vercel.app',
   'http://localhost:3000',
-  // Add Railway URL when you get it
+  // Render frontend URL (update when you have it)
+  process.env.RENDER_EXTERNAL_URL,
+  process.env.RENDER_EXTERNAL_HOSTNAME,
+  // Railway URL
   process.env.RAILWAY_STATIC_URL
 ].filter(Boolean); // Filter out undefined values
 
@@ -92,8 +95,8 @@ const routes = require('./server/routes');
 
 // Database connection middleware
 app.use(async (req, res, next) => {
-  // Skip database connection during build or for static assets
-  if (process.env.VERCEL_BUILD_STEP || req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
+  // Skip database connection for static assets
+  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
     return next();
   }
   
@@ -112,13 +115,20 @@ app.use(async (req, res, next) => {
 // API Routes - ensure they're mounted at /api
 app.use('/api', routes);
 
-// Railway health check
-app.get('/health', (req, res) => {
+// Health check for Render
+app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'central-computers-api',
+    environment: process.env.NODE_ENV || 'development',
+    platform: process.env.RENDER_EXTERNAL_URL ? 'render' : (process.env.RAILWAY_STATIC_URL ? 'railway' : 'local'),
     timestamp: new Date().toISOString()
   });
+});
+
+// Also add a root health check
+app.get('/health', (req, res) => {
+  res.redirect('/api/health');
 });
 
 // Serve static assets in production
@@ -158,18 +168,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// For Vercel serverless functions
-if (process.env.VERCEL) {
-  // Export the Express app as a module
-  module.exports = app;
-} else {
-  // Connect to database in development
-  dbConnectionManager.connect();
-  
-  // Start server for local development or Railway
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Database: ${process.env.DATABASE_URL ? 'Connected via URL' : 'Using individual params'}`);
-  });
-} 
+// Connect to database in development
+dbConnectionManager.connect();
+
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Platform: ${process.env.RENDER_EXTERNAL_URL ? 'Render' : (process.env.RAILWAY_STATIC_URL ? 'Railway' : 'Local')}`);
+  console.log(`Database: ${process.env.DATABASE_URL ? 'Connected via URL' : 'Using individual params'}`);
+}); 
