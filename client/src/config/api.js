@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 // Konfigurasi base URL berdasarkan environment
+// Karena frontend dan backend berada di domain yang sama di Vercel,
+// kita bisa menggunakan URL relatif untuk API
 const baseURL = process.env.NODE_ENV === 'production'
-  ? process.env.REACT_APP_API_URL || 'https://central-computers-production.up.railway.app' // URL Railway
+  ? ''  // URL kosong berarti menggunakan domain yang sama
   : 'http://localhost:5001';
 
 // Membuat instance axios dengan konfigurasi

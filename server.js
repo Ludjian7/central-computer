@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 5001;
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://central-computers.vercel.app', 
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
         'https://central-computer.vercel.app', 
         process.env.FRONTEND_URL
       ].filter(Boolean)
@@ -57,7 +57,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+// For Vercel serverless functions
+if (process.env.VERCEL) {
+  // Export the Express app as a module
+  module.exports = app;
+} else {
+  // Start server for local development
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+} 
