@@ -22,11 +22,14 @@
     "react-router-dom": "^6.20.0",
     "react-scripts": "5.0.1",
     "recharts": "^2.15.3",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "customize-cra": "^1.0.0",
+    "react-app-rewired": "^2.2.1"
   },
   "scripts": {
     "start": "react-app-rewired start",
     "build": "CI=false react-app-rewired build",
+    "vercel-build": "CI=false react-scripts build",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },
@@ -50,7 +53,5 @@
   },
   "proxy": "http://localhost:5001",
   "devDependencies": {
-    "customize-cra": "^1.0.0",
-    "react-app-rewired": "^2.2.1"
   }
 }
