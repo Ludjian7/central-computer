@@ -41,6 +41,8 @@ export const AuthProvider = ({ children }) => {
         ? { email: usernameOrEmail, password } 
         : { username: usernameOrEmail, password };
       
+      console.log('Sending login request to:', api.defaults.baseURL + '/auth/login');
+      
       const res = await api.post('/auth/login', loginData, {
         headers: {
           'Content-Type': 'application/json',
@@ -55,6 +57,20 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Login error:', err);
+      
+      // Log more detailed error information
+      if (err.response) {
+        console.error('Error response:', {
+          data: err.response.data,
+          status: err.response.status,
+          headers: err.response.headers
+        });
+      } else if (err.request) {
+        console.error('Error request:', err.request);
+      } else {
+        console.error('Error message:', err.message);
+      }
+      
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
       return false;
     } finally {
@@ -88,11 +104,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+  // Logout function - simplified version since we don't have proper session support in serverless
   const logout = async () => {
     try {
       setLoading(true);
-      await api.get('/auth/logout');
+      // No need to call the API since we don't have proper session support
       setCurrentUser(null);
       navigate('/login');
     } catch (err) {
