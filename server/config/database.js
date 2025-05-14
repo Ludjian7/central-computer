@@ -1,13 +1,16 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+// Check if running in production (for Supabase) or development (local PostgreSQL)
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Create Sequelize instance with safe password handling
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'toko_komputer_db',
+  process.env.DB_NAME || (isProduction ? 'postgres' : 'toko_komputer_db'),
   process.env.DB_USER || 'postgres',
-  (process.env.DB_PASSWORD || 'postgres').toString(),
+  (process.env.DB_PASSWORD || (isProduction ? '' : 'postgres')).toString(),
   {
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST || (isProduction ? 'your-project.supabase.co' : 'localhost'),
     port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
     logging: false,
@@ -18,8 +21,11 @@ const sequelize = new Sequelize(
       idle: 10000
     },
     dialectOptions: {
-      // Handle specific cases for authentication
-      ssl: false
+      // SSL untuk Supabase (hanya di production)
+      ssl: isProduction ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
     }
   }
 );

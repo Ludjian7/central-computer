@@ -18,7 +18,11 @@ const PORT = process.env.PORT || 5001;
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://your-vercel-app.vercel.app'] 
+    ? [
+        'https://central-computers.vercel.app', 
+        'https://central-computer.vercel.app', 
+        process.env.FRONTEND_URL
+      ].filter(Boolean)
     : 'http://localhost:3000',
   credentials: true
 }));
