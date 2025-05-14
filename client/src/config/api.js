@@ -1,19 +1,29 @@
 import axios from 'axios';
 
+// Define available backend URLs
+const BACKEND_URLS = {
+  render: 'https://central-computers-backend.onrender.com/api',  // Update with your Render URL when available
+  railway: 'https://central-computers.up.railway.app/api',
+  local: 'http://localhost:5001/api'
+};
+
 // Konfigurasi base URL berdasarkan environment
-const baseURL = process.env.NODE_ENV === 'production'
-  ? 'https://central-computers.up.railway.app/api'  // Ganti dengan URL Railway Anda
-  : 'http://localhost:5001/api';
+const getBackendUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return BACKEND_URLS.render; // Use Render in production
+  }
+  return BACKEND_URLS.local; // Use local in development
+};
 
 // Membuat instance axios dengan konfigurasi
 const api = axios.create({
-  baseURL,
+  baseURL: getBackendUrl(),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   },
   withCredentials: true, // Untuk mengirim cookie
-  timeout: 10000, // 10 second timeout
+  timeout: 15000, // 15 second timeout for slower serverless cold starts
 });
 
 // Request interceptor
