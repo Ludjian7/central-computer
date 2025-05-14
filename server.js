@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 5001;
 // CORS Configuration for Vercel deployment
 const whitelist = [
   'https://central-computer.vercel.app',
+  'https://central-computers.vercel.app',
   'https://central-computer-4fhshk1di-ludjian7s-projects.vercel.app',
   'http://localhost:3000'
 ];
@@ -51,26 +52,60 @@ app.use(session({
   }
 }));
 
-// Conditionally import and initialize database 
-// (only if not in build/initial deployment phase)
-if (!process.env.VERCEL_BUILD_STEP) {
-  try {
-    // Database
-    const { testConnection } = require('./server/config/database');
-    const { syncModels } = require('./server/models');
-    
-    // Test database connection
-    testConnection();
-    
-    // Sync models with database
-    syncModels();
-  } catch (error) {
-    console.error('Database initialization error:', error);
+// Create a connection manager to handle pooling for serverless
+const dbConnectionManager = {
+  isConnected: false,
+  connect: async function() {
+    if (this.isConnected) {
+      console.log('Already connected to database');
+      return;
+    }
+
+    try {
+      // Database
+      const { testConnection } = require('./server/config/database');
+      const { syncModels } = require('./server/models');
+      
+      // Test database connection
+      const connected = await testConnection();
+      
+      if (connected) {
+        this.isConnected = true;
+        console.log('Database connection established');
+        
+        // Sync models with database - skip in production to avoid schema changes
+        if (process.env.NODE_ENV !== 'production') {
+          await syncModels();
+        }
+      }
+    } catch (error) {
+      console.error('Database connection error:', error);
+      this.isConnected = false;
+    }
   }
-}
+};
 
 // Routes
 const routes = require('./server/routes');
+
+// Database connection middleware
+app.use(async (req, res, next) => {
+  // Skip database connection during build or for static assets
+  if (process.env.VERCEL_BUILD_STEP || req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
+    return next();
+  }
+  
+  // Only connect for API routes
+  if (req.path.startsWith('/api')) {
+    try {
+      await dbConnectionManager.connect();
+    } catch (error) {
+      console.error('Database middleware error:', error);
+    }
+  }
+  
+  next();
+});
 
 // API Routes - ensure they're mounted at /api
 app.use('/api', routes);
@@ -117,6 +152,9 @@ if (process.env.VERCEL) {
   // Export the Express app as a module
   module.exports = app;
 } else {
+  // Connect to database in development
+  dbConnectionManager.connect();
+  
   // Start server for local development
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
